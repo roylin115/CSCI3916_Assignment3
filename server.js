@@ -69,11 +69,70 @@ router.post('/signin', async (req, res) => { // Use async/await
 
 router.route('/movies')
     .get(authJwtController.isAuthenticated, async (req, res) => {
-        return res.status(500).json({ success: false, message: 'GET request not supported' });
+      try {
+        const movies = await Movie.find(); // Use await with Movie.find()
+        res.json(movies);
+      } catch (err) {
+        res.status(500).json({ success: false, message: 'Something went wrong. Please try again later.' }); // 500 Internal Server Error
+      }
     })
     .post(authJwtController.isAuthenticated, async (req, res) => {
-        return res.status(500).json({ success: false, message: 'POST request not supported' });
-    });
+      try {
+        if(!req.body.actors || req.body.actors.length === 0) {
+          return res.status(400).json({ success: false, message: 'Please include at least one actor for the movie.' });
+        }
+        const movie = new Movie(req.body);
+        await movie.save();
+
+        res.status(201).json({ success: true, msg: 'Successfully created new movie.' });
+      } catch (err) {
+        res.status(500).json({ success: false, message: 'Something went wrong. Please try again later.' });
+      }
+    })
+    ;
+
+router.route('/movies/:id')
+  .get(authJwtController.isAuthenticated, async (req, res) => {
+    try {
+      const movie = await Movie.findById(req.params.id);
+      if (!movie) {
+        return res.status(404).json({ success: false, message: 'Movie not found.' });
+      }
+      res.json(movie);
+    } catch (err) {
+      res.status(500).json({ success: false, message: 'Something went wrong.' });
+    }
+  })
+  .put(authJwtController.isAuthenticated, async (req, res) => {
+    try {
+      const movie = await Movie.findByIdAndUpdate(
+        req.params.id,
+        req.body,
+        { new: true, runValidators: true }
+      );
+
+      if (!movie) {
+        return res.status(404).json({ success: false, message: 'Movie not found.' });
+      }
+
+      res.json(movie);
+    } catch (err) {
+      res.status(500).json({ success: false, message: 'Something went wrong.' });
+    }
+  })
+  .delete(authJwtController.isAuthenticated, async (req, res) => {
+    try {
+      const movie = await Movie.findByIdAndDelete(req.params.id);
+
+      if (!movie) {
+        return res.status(404).json({ success: false, message: 'Movie not found.' });
+      }
+
+      res.json({ success: true, msg: 'Successfully deleted movie.' });
+    } catch (err) {
+      res.status(500).json({ success: false, message: 'Something went wrong.' });
+    }
+  });
 
 app.use('/', router);
 
