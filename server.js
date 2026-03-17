@@ -1,3 +1,13 @@
+require('dotenv').config(); // Load environment variables at the top
+
+const mongoose = require('mongoose');
+
+mongoose.connect(process.env.DB)
+  .then(() => console.log('Connected to MongoDB'))
+  .catch(err => console.error('MongoDB connection error:', err));
+
+const SECRET_KEY = process.env.SECRET_KEY;
+
 const express = require('express');
 const bodyParser = require('body-parser');
 const passport = require('passport');
